@@ -8,15 +8,13 @@
 //#define DEBUG
 using namespace std;
 
-struct Color
-{
+struct Color{
 	unsigned char red = 0;
 	unsigned char green = 0;
 	unsigned char blue = 0;
 };
 
-int main()
-{
+int main(){
 	srand(time(NULL));
 	size_t height, width;
 	cout << "Enter the image resolution (each pixel is a block):\nWidth: ";
@@ -33,63 +31,51 @@ int main()
 			block = (rand() % 201) / 100.0 - 1;//filling land with random values from -1 to 1
 
 	//smoothing
-	auto smooth = [&land, &tempLand, &height, &width](int x1, int x2)
-	{
+	auto smooth = [&land, &tempLand, &height, &width](int x1, int x2){
 		for (size_t y = 0; y < height; ++y)
-			for (size_t x = x1; x < x2; ++x)
-			{
+			for (size_t x = x1; x < x2; ++x){
 				double sum = land[y][x];
 				int amount = 1;
-				if (x != 0)
-				{
+				if (x != 0){
 					++amount;
 					sum += land[y][x - 1];
 				}
-				if (y != 0)
-				{
+				if (y != 0){
 					++amount;
 					sum += land[y - 1][x];
 				}
-				if (x != width - 1)
-				{
+				if (x != width - 1){
 					++amount;
 					sum += land[y][x + 1];
 				}
-				if (y != height - 1)
-				{
+				if (y != height - 1){
 					++amount;
 					sum += land[y + 1][x];
 				}
-				if (x != 0 && y != 0)
-				{
+				if (x != 0 && y != 0){
 					++amount;
 					sum += land[y - 1][x - 1];
 				}
-				if (x != 0 && y != height - 1)
-				{
+				if (x != 0 && y != height - 1){
 					++amount;
 					sum += land[y + 1][x - 1];
 				}
-				if (x != width - 1 && y != height - 1)
-				{
+				if (x != width - 1 && y != height - 1){
 					++amount;
 					sum += land[y + 1][x + 1];
 				}
-				if (x != width - 1 && y != 0)
-				{
+				if (x != width - 1 && y != 0){
 					++amount;
 					sum += land[y - 1][x + 1];
 				}
 				tempLand[y][x] = sum / amount;
 			}
 	};
-	int thSize = thread::hardware_concurrency();
-	if (!thSize) return -1;
+	int thSize = thread::hardware_concurrency() - 1;
+	if (thSize < 1) return -1;
 	thread* threads = new thread[thSize];
-	for (size_t i = 0; i < 100; i++)//more times = huger areas, but lower performance
-	{
-		for (size_t j = 0; j < thSize; ++j)
-		{
+	for (size_t i = 0; i < 100; i++){//more times = huger areas, but lower performance
+		for (size_t j = 0; j < thSize; ++j){
 			int x1 = width / thSize * j;
 			int x2 = (j < thSize - 1) ? width / thSize * (j + 1) : width;
 			threads[j] = thread(smooth, x1, x2);
@@ -122,13 +108,11 @@ int main()
 		for (size_t x = 0; x < width; ++x)
 			if (land[y][x] < 0)
 				img[y][x].blue = 255 + land[y][x] * 200;
-			else if (land[y][x] > 0.1)
-			{
+			else if (land[y][x] > 0.1){
 				img[y][x].green = 255;
 				img[y][x].blue = img[y][x].red = land[y][x] * 255;
 			}
-			else
-			{
+			else{
 				img[y][x].blue = land[y][x] * 255;
 				img[y][x].green = img[y][x].red = 200;
 			}
@@ -136,8 +120,7 @@ int main()
 	//converting vector to data that can be written with stb_image_write.h
 	unsigned char* imgData = new unsigned char[(height * width) * 3];
 	for (size_t y = 0; y < height; y++)
-		for (size_t x = 0; x < width; x++)
-		{
+		for (size_t x = 0; x < width; x++){
 			imgData[(width * y + x) * 3] = img[y][x].red;
 			imgData[(width * y + x) * 3 + 1] = img[y][x].green;
 			imgData[(width * y + x) * 3 + 2] = img[y][x].blue;
