@@ -5,8 +5,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION //stb_image_write.h requires this
 #define __STDC_LIB_EXT1__ //it has to be defined for stb_image_write.h to work with C++ (may be a bug)
 #include "stb_image_write.h"
-//#define DEBUG
-using namespace std;
+#define DEBUG 0
 
 struct Color{
 	unsigned char red = 0;
@@ -17,15 +16,15 @@ struct Color{
 int main(){
 	srand(time(NULL));
 	size_t height, width;
-	cout << "Enter the image resolution (each pixel is a block):\nWidth: ";
-	cin >> width;
-	cout << "Height: ";
-	cin >> height;
-#ifdef DEBUG
+	std::cout << "Enter the image resolution (each pixel is a block):\nWidth: ";
+	std::cin >> width;
+	std::cout << "Height: ";
+	std::cin >> height;
+#if DEBUG == 1
 	auto start = chrono::high_resolution_clock::now();
 #endif // DEBUG
-	vector<vector<double>> land(height, vector<double>(width));
-	vector<vector<double>> tempLand(height, vector<double>(width));
+	std::vector<std::vector<double>> land(height, std::vector<double>(width));
+	std::vector<std::vector<double>> tempLand(height, std::vector<double>(width));
 	for (auto& row : land)
 		for (auto& block : row)
 			block = (rand() % 201) / 100.0 - 1;//filling land with random values from -1 to 1
@@ -71,14 +70,14 @@ int main(){
 				tempLand[y][x] = sum / amount;
 			}
 	};
-	int thSize = thread::hardware_concurrency() - 1;
-	if (thSize < 1) return -1;
-	thread* threads = new thread[thSize];
+	int thSize = std::thread::hardware_concurrency() - 1;
+	if (thSize < 1) return 1;
+	std::thread* threads = new std::thread[thSize];
 	for (size_t i = 0; i < 100; i++){//more times = huger areas, but lower performance
 		for (size_t j = 0; j < thSize; ++j){
 			int x1 = width / thSize * j;
 			int x2 = (j < thSize - 1) ? width / thSize * (j + 1) : width;
-			threads[j] = thread(smooth, x1, x2);
+			threads[j] = std::thread(smooth, x1, x2);
 		}
 		for (size_t j = 0; j < thSize; ++j)
 			threads[j].join();
@@ -103,7 +102,7 @@ int main(){
 			block *= factor;
 
 	//setting colors according to the land height
-	vector<vector<Color>> img(height, vector<Color>(width));
+	std::vector<std::vector<Color>> img(height, std::vector<Color>(width));
 	for (size_t y = 0; y < height; ++y)
 		for (size_t x = 0; x < width; ++x)
 			if (land[y][x] < 0)
@@ -128,11 +127,11 @@ int main(){
 
 	//writing data to image file
 	if (stbi_write_png("image.png", width, height, 3, imgData, 0))
-		cout << "Image created successfully\n";
+		std::cout << "Image created successfully\n";
 	else
-		cout << "Error during creating image\n";
+		std::cout << "Error during creating image\n";
 	delete[] imgData;
-#ifdef DEBUG
+#if DEBUG == 1
 	auto end = chrono::high_resolution_clock::now();
 	chrono::duration<float> duration = end - start;
 	cout << "Duration: " << duration.count() << "\a\n";
