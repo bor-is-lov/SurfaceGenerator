@@ -25,12 +25,17 @@ int main(){
 #endif // DEBUG
 	std::vector<std::vector<double>> land(height, std::vector<double>(width));
 	std::vector<std::vector<double>> tempLand(height, std::vector<double>(width));
-	for (auto& row : land)
-		for (auto& block : row)
-			block = (rand() % 201) / 100.0 - 1;//filling land with random values from -1 to 1
+	std::vector<std::vector<double>> land2(height, std::vector<double>(width));
+
+	for (size_t y = 0; y < height; ++y)
+		for (size_t x = 0; x < width; ++x)
+		{
+			land[x][y] = (rand() % 201) / 100.0 - 1;//filling land with random values from -1 to 1
+			land2[x][y] = (rand() % 201) / 100.0 - 1;//filling land with random values from -1 to 1
+		}
 
 	//smoothing
-	auto smooth = [&land, &tempLand, &height, &width](int x1, int x2){
+	auto smooth = [&](int x1, int x2, std::vector<std::vector<double>> land){
 		for (size_t y = 0; y < height; ++y)
 			for (size_t x = x1; x < x2; ++x){
 				double sum = land[y][x];
@@ -73,11 +78,11 @@ int main(){
 	int thSize = std::thread::hardware_concurrency() - 1;
 	if (thSize < 1) return 1;
 	std::thread* threads = new std::thread[thSize];
-	for (size_t i = 0; i < 100; i++){//more times = huger areas, but lower performance
+	for (size_t i = 0; i < 50; i++){//more times = huger areas, but lower performance
 		for (size_t j = 0; j < thSize; ++j){
 			int x1 = width / thSize * j;
 			int x2 = (j < thSize - 1) ? width / thSize * (j + 1) : width;
-			threads[j] = std::thread(smooth, x1, x2);
+			threads[j] = std::thread(smooth, x1, x2, land);
 		}
 		for (size_t j = 0; j < thSize; ++j)
 			threads[j].join();
@@ -85,10 +90,26 @@ int main(){
 			for (size_t x = 0; x < width; ++x)
 				land[y][x] = tempLand[y][x];
 	}
+	for (size_t i = 0; i < 500; i++){//more times = huger areas, but lower performance
+		for (size_t j = 0; j < thSize; ++j){
+			int x1 = width / thSize * j;
+			int x2 = (j < thSize - 1) ? width / thSize * (j + 1) : width;
+			threads[j] = std::thread(smooth, x1, x2, land2);
+		}
+		for (size_t j = 0; j < thSize; ++j)
+			threads[j].join();
+		for (size_t y = 0; y < height; ++y)
+			for (size_t x = 0; x < width; ++x)
+				land2[y][x] = tempLand[y][x];
+	}
 	delete[] threads;
 	for (auto& row : tempLand)
 		row.~vector();
 	tempLand.~vector();
+
+	for (size_t y = 0; y < height; ++y)
+		for (size_t x = 0; x < width; ++x)
+			land[x][y] = land[x][y] / 10 + land2[x][y];
 
 	//scaling back to [-1; 1]
 	double maxEl = -1;
