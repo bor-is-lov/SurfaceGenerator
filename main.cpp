@@ -30,13 +30,18 @@ int main(){
 
 	for (size_t y = 0; y < height; ++y)
 		for (size_t x = 0; x < width; ++x)
-			src[x][y] = (rand() % 201) / 100.0 - 1;//filling land with random values from -1 to 1
+			src[y][x] = (rand() % 201) / 100.0 - 1;//filling land with random values from -1 to 1
 
 	//smoothing
 	auto smooth = [&](std::vector<std::vector<double>>* land, int x1, int x2, int radius){
 		for (int y = 0; y < height; ++y)
 			for (int x = x1; x < x2; ++x)
 			{
+				if (y < radius || x < radius || y >= height - radius || x >= width - radius)
+				{
+					(*land)[y][x] = 0.0;
+					continue;
+				}
 				double sum = 0;
 				int amount = 0;
 				for (int yr = y - radius; yr < y + radius; yr++)
@@ -46,10 +51,10 @@ int main(){
 							continue;
 						double influence = 1 - sqrt((x - xr) * (x - xr) + (y - yr) * (y - yr)) / radius;
 						if (influence > 0.0)
-							sum += src[xr][yr] * influence;
+							sum += src[yr][xr] * influence;
 						amount++;
 					}
-				(*land)[x][y] = sum / amount;
+				(*land)[y][x] = sum / amount;
 			}
 	};
 	int thSize = std::thread::hardware_concurrency() - 1;
@@ -101,7 +106,13 @@ int main(){
 
 	for (int y = 0; y < height; ++y)
 		for (int x = 0; x < width; ++x)
-			land[x][y] = land[x][y] + land2[x][y]/10;
+		{
+			land[y][x] = land[y][x] + land2[y][x] / 10;
+			if (land[y][x] > 1.0)
+				land[y][x] = 1.0;
+			if (land[y][x] < -1.0)
+				land[y][x] = -1.0;
+		}
 
 	//setting colors according to the land height
 	std::vector<std::vector<Color>> img(height, std::vector<Color>(width));
